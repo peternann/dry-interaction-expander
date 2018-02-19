@@ -1,0 +1,10 @@
+# Comment1
+PreAmble=i want|i need
+Support=help|support
+INTENT: Support
+ $PreAmble $Support [please]
+
+INTENT: GetNumber
+SLOT: number:AMAZON.number
+ $PreAmble <number>
+ $PreAmble <numberFoo>

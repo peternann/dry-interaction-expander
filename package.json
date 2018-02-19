@@ -1,0 +1,35 @@
+{
+  "name": "",
+  "description": "",
+  "version": "0.0.0",
+  "private": true,
+  "author": "Peter Nann",
+  "homepage": "",
+  "contributors": [
+    "Peter Nann <he@peternann.com> (https://github.com/peternann)"
+  ],
+  "bugs": {
+    "url": ""
+  },
+  "scripts": {
+    "start": "nodemon index.js",
+    "autorun": "nodemon -e ts,json,yaml index.ts test.yaml --exec ts-node"
+  },
+  "dependencies": {
+    "commander": "^2.14.1",
+    "linebyline": "^1.3.0"
+  },
+  "keywords": [],
+  "repository": "",
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "http://opensource.org/licenses/MIT"
+    }
+  ],
+  "devDependencies": {
+    "@types/node": "^9.4.6",
+    "ts-node": "^4.1.0",
+    "typescript": "^2.7.2"
+  }
+}
