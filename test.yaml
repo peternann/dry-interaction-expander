@@ -1,19 +1,13 @@
 # Comment1
 INVOCATION_NAME: forget me not
+LANG: en-AU
+INTENT: AMAZON.HelpIntent
 
-PreAmble=i want|i need
-Support=help|support
-INTENT: Support
- $PreAmble $Support [please]
-
-INTENT: GetNumber
-SLOT: number:AMAZON.number
- $PreAmble <number>
- $PreAmble <number>
+INTENT: FedTheAnimal
+SLOT: Animal:Animals
+ I've fed the <Animal>
 
 ENTITY: Animals
 dog
 cat
-bird
-african elephant
-white rhino
+fish

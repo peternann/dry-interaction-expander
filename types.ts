@@ -56,6 +56,7 @@ export class SourceEntity extends SentenceCollection {
 
 export class DryUttExpanderData {
     invocationName: string;
+    lang: string = "en-US";   // - Default. It's the way the world is...
     vars: object;
     intents: SourceIntent[];
     entities: SourceEntity[];

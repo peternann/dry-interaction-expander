@@ -1,7 +1,8 @@
 
 import { DryUttExpanderData, SourceSlot, SourceIntent } from './types';
+import * as fs from 'fs';
 
-var debug = require('debug')('dry-interaction-expander:expand-sentences');
+var debug = require('debug')('dry-interaction-expander:output-alexa');
 const LOG = debug;
 const WARN = console.warn;
 
@@ -35,14 +36,14 @@ let AlexaJson = {
     }
 };
 
-export function outputAlexa(data: DryUttExpanderData) {
+export function outputAlexa(data: DryUttExpanderData, outputFolder: string) {
     LOG("outputAlexa()...");
     let alexaModel = AlexaJson.interactionModel.languageModel;
 
     alexaModel.invocationName = data.invocationName;
 
     for (let sourceIntent of data.intents) {
-        let alexaIntent: AlexaIntent = { name: sourceIntent.name, samples: [], slots: [] };
+        let alexaIntent: AlexaIntent = { name: sourceIntent.name, slots: [], samples: [] };
         for (let sentence of sourceIntent.expandedSentences) {
 
             alexaIntent.samples.push(
@@ -73,5 +74,6 @@ export function outputAlexa(data: DryUttExpanderData) {
 
     console.log(JSON.stringify(AlexaJson, null, 2));
 
+    fs.writeFileSync(`${outputFolder}/${data.lang}.json`, JSON.stringify(AlexaJson, null, 2));
 
 }
