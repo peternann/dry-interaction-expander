@@ -2,15 +2,16 @@
 
 var commander = require('commander');
 
-import { DieData } from './types';
+import { DryUttExpanderData } from './types';
 import { readSource } from './read-source';
 import { expandSentences } from './expand-sentences';
+import { outputAlexa } from './output-alexa';
 
 const LOG = console.log;
 
 
 /** Our main internal data storage global */
-var data = new DieData();
+var data = new DryUttExpanderData();
 
 commander
     .version('0.1.0')
@@ -30,6 +31,10 @@ if (commander.args.length < 1) {
     process.exit(1);
 } else {
     var currentArg = 0;
+
+    // Read the first source file, and chain to read others:
+    nextSource();
+
     /** Function to read all source files. Uses Promise.then() chaining to deal with async read: */
     function nextSource() {
         LOG("Reading source file:", commander.args[currentArg]);
@@ -37,29 +42,23 @@ if (commander.args.length < 1) {
             .then(() => {
                 if (++currentArg < commander.args.length)
                     nextSource();
-                else
-                    produceOutput();
+                else   // Done reading input. Produce output:
+                    sourceReadCompletes();
             })
             .catch((err) => {
                 console.error("ERROR:", err);
             });
     }
-    nextSource();
 }
 
-function produceOutput() {
+function sourceReadCompletes() {
     LOG("produceOutput():...");
     for (var intent in data.intents) if (data.intents.hasOwnProperty(intent)) {
         expandSentences(data, intent);
+        console.dir(data.intents[intent]);
     }
+
+    outputAlexa(data);
+
 }
-
-
-// process.exit();
-
-// console.log('you ordered a pizza with:');
-// if (program.peppers) console.log('  - peppers');
-// if (program.pineapple) console.log('  - pineapple');
-// if (program.bbqSauce) console.log('  - bbq');
-// console.log('  - %s cheese', program.cheese);
 

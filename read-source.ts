@@ -3,10 +3,10 @@ const readLineByLine = require('linebyline');
 
 const LOG = console.log;
 
-import { DieData } from './types';
+import { DryUttExpanderData, SourceIntent } from './types';
 
 
-export function readSource(sourceFile: string, data: DieData): Promise<string> {
+export function readSource(sourceFile: string, data: DryUttExpanderData): Promise<string> {
 
     return new Promise((resolve, reject) => {
         readLineByLine(sourceFile)
@@ -27,11 +27,14 @@ export function readSource(sourceFile: string, data: DieData): Promise<string> {
                     LOG("Ignoring empty line...");
                 } else if ((match = line.match(/^([a-z0-9_-]+)\s*=\s*(.*)$/i)) !== null) {
                     gotVarDecl(line, match);
+                } else if ((match = line.match(/^INVOCATION_NAME:\s*([a-z0-9_ -]+)$/i)) !== null) {
+                    data.invocationName = match[1];
+                    LOG("Got Invocation name:", data.invocationName);
                 } else if ((match = line.match(/^INTENT:\s*([a-z0-9_-]+)$/i)) !== null) {
                     gotIntentDecl(line, match);
                     // } else if ((match = line.match(/^[a-z0-9_'\$ -]+$/i)) !== null) {
                     //     gotUtterance(line, match);
-                } else if ((match = line.match(/^SLOT:\s*([a-z0-9_-]+)(:([a-z0-9_.-]+))?/ig)) !== null) {
+                } else if ((match = line.match(/^SLOT:\s*([a-z0-9_-]+)(:([a-z0-9_.-]+))?\s*$/i)) !== null) {
                     gotSlotDecl(line, match);
                     // } else if ((match = line.match(/^[a-z0-9_'\$ -]+$/i)) !== null) {
                     //     gotUtterance(line, match);
@@ -60,11 +63,7 @@ export function readSource(sourceFile: string, data: DieData): Promise<string> {
     function gotIntentDecl(line, match) {
         let name = match[1];
         LOG(`Got Intent: "${name}"`);
-        data.currentIntent = name;
-        data.intents[name] = {
-            sentences: { source: [], expanding: [], expanded: [] },
-            slots: []
-        };
+        data.setCurrentIntent(name);
     }
 
     function gotSlotDecl(line, match) {
@@ -72,7 +71,7 @@ export function readSource(sourceFile: string, data: DieData): Promise<string> {
         let name = match[1],
             type = match[3];
         LOG(`Got Slot: "${name}:${type}"`);
-        data.intents[data.currentIntent].slots.push({ name: name, type: type });
+        data.currentIntent.setSlot(name, type);
     }
 
     function gotUtterance(utt) {
@@ -80,7 +79,7 @@ export function readSource(sourceFile: string, data: DieData): Promise<string> {
         // We put the sentences into an array in reverse appearance order via 'unshift'.
         // Why? Because we do a lot of busy work processing later with pop (and push) - potentially more
         // efficient on large arrays, which essentially ends up consuming them in original order:
-        data.intents[data.currentIntent].sentences.source.unshift('(' + utt + ')');
+        data.currentIntent.newSentence(utt);
     }
 
 }
