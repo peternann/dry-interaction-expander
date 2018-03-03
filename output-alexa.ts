@@ -72,8 +72,7 @@ export function outputAlexa(data: DryUttExpanderData, outputFolder: string) {
         alexaModel.types.push(alexaEntity);
     }
 
-    console.log(JSON.stringify(AlexaJson, null, 2));
-
-    fs.writeFileSync(`${outputFolder}/${data.lang}.json`, JSON.stringify(AlexaJson, null, 2));
-
+    let outfilePath = `${outputFolder}/${data.lang}.json`;
+    console.log(`Writing to ${outfilePath}`);
+    fs.writeFileSync(outfilePath, JSON.stringify(AlexaJson, null, 2));
 }
