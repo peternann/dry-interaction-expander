@@ -53,9 +53,14 @@ if (commander.args.length < 1) {
 
 function sourceReadCompletes() {
     LOG("produceOutput():...");
-    for (var intent in data.intents) if (data.intents.hasOwnProperty(intent)) {
+
+    // Sort intents, to make output insentitive to input source details:
+    data.intents.sort((i1, i2) => { return (i1.name < i2.name) ? +1 : -1 });
+
+    for (var intent of data.intents) {
         expandSentences(data, intent);
-        console.dir(data.intents[intent]);
+        LOG("Intent data after expansion:\n", intent);
+        // console.dir(intent);
     }
 
     outputAlexa(data);

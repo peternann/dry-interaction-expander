@@ -3,14 +3,16 @@ interface Dictionary<T> {
     [Key: string]: T;
 }
 
+export interface SourceSlot {
+    name: string,
+    type: string
+}
+
 export class SourceIntent {
     name: string;
     sourceSentences: string[];
     expandedSentences: string[];
-    private slots: Array<{
-        name: string,
-        type: string
-    }>;
+    private slots: SourceSlot[];
 
     constructor(name: string) {
         this.name = name;
@@ -21,8 +23,12 @@ export class SourceIntent {
     // We put the sentences into an array in reverse appearance order via 'unshift'.
     // Why? Because we do a lot of busy work processing later with pop (and push) - potentially more
     // efficient on large arrays, which essentially ends up consuming them in original order:
-    public newSentence(sentence: string) {
+    public newSourceSentence(sentence: string) {
         this.sourceSentences.unshift(sentence);
+    }
+
+    public newExpandedSentence(sentence: string) {
+        this.expandedSentences.push(sentence);
     }
 
     public setSlot(slotName: string, slotType: string) {
@@ -31,6 +37,9 @@ export class SourceIntent {
     }
     public getSlot(slotName: string) {
         return this.slots.find((testSlot) => { return testSlot.name == slotName });
+    }
+    public getSlots(): SourceSlot[] {
+        return this.slots;
     }
 };
 

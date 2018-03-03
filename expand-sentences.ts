@@ -1,5 +1,5 @@
 
-import { DryUttExpanderData } from './types';
+import { DryUttExpanderData, SourceIntent } from './types';
 
 const LOG = console.log;
 const WARN = console.warn;
@@ -27,10 +27,8 @@ const reVanillaOrInSquareBrackets = new RegExp("\\[(" + vanillaTextWithOrRe + ")
 const reSlot = new RegExp(slotRe, 'g');
 
 
-export function expandSentences(data: DryUttExpanderData, intentName: string) {
-    console.log(`Processing Intent: "${intentName}"`);
-    //let sourceSentences = data.intents[intent].sourceSentences;
-    let intent = data.intents[intentName];
+export function expandSentences(data: DryUttExpanderData, intent: SourceIntent) {
+    console.log(`Processing Intent: "${intent.name}"`);
     intent.expandedSentences = [];
     /** A temporary array storing sentence permutations DURING expansion: */
     let expanding: string[] = [];
@@ -56,7 +54,7 @@ export function expandSentences(data: DryUttExpanderData, intentName: string) {
                         WARN(`Undefined slot '${slotName}' referenced via sentence source: "${sourceSentence}" `)
                     }
                 }
-                intent.expandedSentences.push(sentence);
+                intent.newExpandedSentence(sentence);
             } else if (null != (match = reVariableUsage.exec(sentence))) {
                 // Variable usage:
                 let varName = match[1].toLowerCase();
@@ -89,6 +87,12 @@ export function expandSentences(data: DryUttExpanderData, intentName: string) {
             }
         }
     }
+    // All sentences for the intent expanded.
+
+    // By default, we sort the output sentences. This should make it neater to compare
+    // 'before and after' vesions of all expanded sentences, irrespective of the input source
+    //  details/order, or the vaugueries of the expansion logic:
+    intent.expandedSentences.sort();
 }
 
 /** Shorthand: Replace the given RegEx match in sentence, with replacement: */

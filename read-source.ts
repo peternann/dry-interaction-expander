@@ -79,7 +79,7 @@ export function readSource(sourceFile: string, data: DryUttExpanderData): Promis
         // We put the sentences into an array in reverse appearance order via 'unshift'.
         // Why? Because we do a lot of busy work processing later with pop (and push) - potentially more
         // efficient on large arrays, which essentially ends up consuming them in original order:
-        data.currentIntent.newSentence(utt);
+        data.currentIntent.newSourceSentence(utt);
     }
 
 }

@@ -1,5 +1,5 @@
 
-import { DryUttExpanderData, SourceIntent } from './types';
+import { DryUttExpanderData, SourceSlot, SourceIntent } from './types';
 
 const LOG = console.log;
 
@@ -33,28 +33,30 @@ let AlexaJson = {
     }
 };
 
-export function outputAlexa(data: any) {
-    let model = AlexaJson.interactionModel.languageModel;
+export function outputAlexa(data: DryUttExpanderData) {
+    LOG("outputAlexa()...");
+    let alexaModel = AlexaJson.interactionModel.languageModel;
 
-    model.invocationName = data.invocationName;
+    alexaModel.invocationName = data.invocationName;
 
-    for (var intentName in data.intents) if (data.intents.hasOwnProperty(intentName)) {
-        let intentData: SourceIntent = data.intents[intentName];
-        let newIntent: AlexaIntent = { name: intentName };
-        for (let sentence of intentData.expandedSentences) {
-            if (!newIntent.samples) newIntent.samples = [];
+    for (let sourceIntent of data.intents) {
+        let alexaIntent: AlexaIntent = { name: sourceIntent.name, samples: [], slots: [] };
+        for (let sentence of sourceIntent.expandedSentences) {
             // TODO: Re-format slots like "<number>" into Alexa format:
-            newIntent.samples.push(sentence);
+            alexaIntent.samples.push(sentence);
         }
         // TODO: Add Slot data into Intent, in Alexa format.
-        // if (intentData.slots) for (let sentence of intentData.slots) {
-        //     newIntent.
-        //         model.intents.push(newIntent);
-
-        // }
+        for (let slot of sourceIntent.getSlots()) {
+            alexaIntent.slots.push(slot);
+        }
+        // Clean up empty arrays in Alexa intent:
+        if (alexaIntent.samples.length == 0) delete alexaIntent.samples;
+        if (alexaIntent.slots.length == 0) delete alexaIntent.slots;
+        // And finally, push the Intent into the Alexa output model:
+        alexaModel.intents.push(alexaIntent);
     }
 
-    LOG(JSON.stringify(model, null, 2));
+    LOG(JSON.stringify(AlexaJson, null, 2));
 
 
 }
