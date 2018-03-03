@@ -38,13 +38,10 @@ if (!commander.alexa && !commander.dialogflow) {
     usage();
 }
 
-if (!commander.output) commander.output = defaultOutputFolder;
-if (!fs.existsSync(commander.output + "/.")) {
-    ERROR(`ERROR: Output folder '${commander.output}' does not exist. Please create it or use '-o <path>' option.`);
-    usage();
-}
-
 if (commander.alexa) {
+    // Remove any trailing slahes: They look bad on error output:
+    commander.alexa = commander.alexa.replace(/\/+$/, '');
+
     if (fs.existsSync(commander.alexa + '/.')) {
         LOG("Alexa folder OK - Carry on.");
     } else {
@@ -100,6 +97,9 @@ function produceOutput() {
     }
 
     outputAlexa(data, commander.alexa);
+
+    console.log("Done.");
+    process.exit(0);
 
 }
 
