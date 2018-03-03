@@ -1,4 +1,6 @@
 # Comment1
+INVOCATION_NAME: forget me not
+
 PreAmble=i want|i need
 Support=help|support
 INTENT: Support
@@ -7,4 +9,11 @@ INTENT: Support
 INTENT: GetNumber
 SLOT: number:AMAZON.number
  $PreAmble <number>
- $PreAmble <numberFoo>
+ $PreAmble <number>
+
+ENTITY: Animals
+dog
+cat
+bird
+african elephant
+white rhino

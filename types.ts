@@ -1,6 +1,25 @@
 
-interface Dictionary<T> {
-    [Key: string]: T;
+/** A simple interface to define a type that we can add sentences to */
+export class SentenceCollection {
+    name: string;
+    sourceSentences: string[];
+    expandedSentences: string[];
+
+    constructor(name: string) {
+        this.name = name;
+        this.sourceSentences = [];
+    }
+
+    // We put the sentences into an array in reverse appearance order via 'unshift'.
+    // Why? Because we do a lot of busy work processing later with pop (and push) - potentially more
+    // efficient on large arrays, which essentially ends up consuming them in original order:
+    public addSentence(sentence: string) {
+        this.sourceSentences.unshift(sentence);
+    }
+
+    public newExpandedSentence(sentence: string) {
+        this.expandedSentences.push(sentence);
+    }
 }
 
 export interface SourceSlot {
@@ -8,27 +27,12 @@ export interface SourceSlot {
     type: string
 }
 
-export class SourceIntent {
-    name: string;
-    sourceSentences: string[];
-    expandedSentences: string[];
+export class SourceIntent extends SentenceCollection {
     private slots: SourceSlot[];
 
     constructor(name: string) {
-        this.name = name;
-        this.sourceSentences = [];
+        super(name);
         this.slots = [];
-    }
-
-    // We put the sentences into an array in reverse appearance order via 'unshift'.
-    // Why? Because we do a lot of busy work processing later with pop (and push) - potentially more
-    // efficient on large arrays, which essentially ends up consuming them in original order:
-    public newSourceSentence(sentence: string) {
-        this.sourceSentences.unshift(sentence);
-    }
-
-    public newExpandedSentence(sentence: string) {
-        this.expandedSentences.push(sentence);
     }
 
     public setSlot(slotName: string, slotType: string) {
@@ -43,33 +47,55 @@ export class SourceIntent {
     }
 };
 
+export class SourceEntity extends SentenceCollection {
+    constructor(name: string) {
+        super(name);
+    }
+};
+
 
 export class DryUttExpanderData {
     invocationName: string;
     vars: object;
     intents: SourceIntent[];
-    currentIntent: SourceIntent;
+    entities: SourceEntity[];
+    currentCollection: SentenceCollection;
 
     constructor() {
         this.vars = {};
         this.intents = [];
-        this.currentIntent = null;
+        this.entities = [];
+        this.currentCollection = null;
     };
 
     public getIntent(name: string): SourceIntent {
         return this.intents.find((testIntent) => { return testIntent.name == name });
     }
 
-    public setCurrentIntent(name: string): SourceIntent {
-        let intent = this.getIntent(name);
-        if (intent)
-            this.currentIntent = intent;
-        else {
-            this.currentIntent = new SourceIntent(name);
-            this.intents.push(this.currentIntent);
-        }
-
-        return this.currentIntent;
+    public getEntity(name: string): SourceEntity {
+        return this.intents.find((testEntity) => { return testEntity.name == name });
     }
+
+    public setIntent(name: string): SourceIntent {
+        let intent = this.getIntent(name);
+        if (!intent) {
+            intent = new SourceIntent(name);
+            this.intents.push(intent);
+        }
+        this.currentCollection = intent;
+        return intent;
+    }
+
+    public setEntity(name: string): SourceEntity {
+        let entity = this.getEntity(name);
+        if (!entity) {
+            entity = new SourceEntity(name);
+            this.entities.push(entity);
+        }
+        this.currentCollection = entity;
+        return entity;
+    }
+
+
 };
 

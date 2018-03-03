@@ -1,7 +1,9 @@
 
 const readLineByLine = require('linebyline');
 
-const LOG = console.log;
+var debug = require('debug')('dry-interaction-expander:expand-sentences');
+const LOG = debug;
+const WARN = console.warn;
 
 import { DryUttExpanderData, SourceIntent } from './types';
 
@@ -38,6 +40,10 @@ export function readSource(sourceFile: string, data: DryUttExpanderData): Promis
                     gotSlotDecl(line, match);
                     // } else if ((match = line.match(/^[a-z0-9_'\$ -]+$/i)) !== null) {
                     //     gotUtterance(line, match);
+                } else if ((match = line.match(/^ENTITY:\s*([a-z0-9_-]+)$/i)) !== null) {
+                    gotEntityDecl(line, match);
+                    // } else if ((match = line.match(/^[a-z0-9_'\$ -]+$/i)) !== null) {
+                    //     gotUtterance(line, match);
                 } else {
                     // LOG(`Unknown line format: "${line}"`);
                     gotUtterance(line);
@@ -62,8 +68,14 @@ export function readSource(sourceFile: string, data: DryUttExpanderData): Promis
 
     function gotIntentDecl(line, match) {
         let name = match[1];
-        LOG(`Got Intent: "${name}"`);
-        data.setCurrentIntent(name);
+        LOG(`Got Intent Decl: "${name}"`);
+        data.setIntent(name);
+    }
+
+    function gotEntityDecl(line, match) {
+        let name = match[1];
+        LOG(`Got Entity Decl: "${name}"`);
+        data.setEntity(name);
     }
 
     function gotSlotDecl(line, match) {
@@ -71,7 +83,11 @@ export function readSource(sourceFile: string, data: DryUttExpanderData): Promis
         let name = match[1],
             type = match[3];
         LOG(`Got Slot: "${name}:${type}"`);
-        data.currentIntent.setSlot(name, type);
+        if (data.currentCollection instanceof SourceIntent) {
+            data.currentCollection.setSlot(name, type);
+        } else {
+            WARN(`Detected SLOT declaration not in INTENT definition. (Ignored)\nLine: ${line}`);
+        }
     }
 
     function gotUtterance(utt) {
@@ -79,7 +95,7 @@ export function readSource(sourceFile: string, data: DryUttExpanderData): Promis
         // We put the sentences into an array in reverse appearance order via 'unshift'.
         // Why? Because we do a lot of busy work processing later with pop (and push) - potentially more
         // efficient on large arrays, which essentially ends up consuming them in original order:
-        data.currentIntent.newSourceSentence(utt);
+        data.currentCollection.addSentence(utt);
     }
 
 }

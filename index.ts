@@ -2,12 +2,14 @@
 
 var commander = require('commander');
 
-import { DryUttExpanderData } from './types';
+import { DryUttExpanderData, SentenceCollection } from './types';
 import { readSource } from './read-source';
-import { expandSentences } from './expand-sentences';
+import { expandSentence } from './expand-sentences';
 import { outputAlexa } from './output-alexa';
 
-const LOG = console.log;
+var debug = require('debug')('dry-interaction-expander:index');
+const LOG = debug;
+const ERROR = console.error;
 
 
 /** Our main internal data storage global */
@@ -26,7 +28,7 @@ commander
 if (!commander.alexa && !commander.dialogflow) commander.alexa = commander.dialogflow = true;
 
 if (commander.args.length < 1) {
-    console.error("index: ERROR: No <source_file> given.")
+    ERROR("index: ERROR: No <source_file> given.")
     commander.help();
     process.exit(1);
 } else {
@@ -43,24 +45,32 @@ if (commander.args.length < 1) {
                 if (++currentArg < commander.args.length)
                     nextSource();
                 else   // Done reading input. Produce output:
-                    sourceReadCompletes();
+                    produceOutput();
             })
             .catch((err) => {
-                console.error("ERROR:", err);
+                ERROR("ERROR:", err);
             });
     }
 }
 
-function sourceReadCompletes() {
+function produceOutput() {
     LOG("produceOutput():...");
 
     // Sort intents, to make output insentitive to input source details:
     data.intents.sort((i1, i2) => { return (i1.name < i2.name) ? +1 : -1 });
 
-    for (var intent of data.intents) {
-        expandSentences(data, intent);
-        LOG("Intent data after expansion:\n", intent);
-        // console.dir(intent);
+    // We can expand the sentences in Intents and Entities in one loop since they
+    // both are SentenceCollections:
+    let BothCollections: SentenceCollection[] = data.intents;
+    BothCollections = BothCollections.concat(data.entities);
+    for (var sentenceCollection of BothCollections) {
+        sentenceCollection.expandedSentences = [];
+        for (let sourceSentence of sentenceCollection.sourceSentences)
+            expandSentence(sourceSentence, data, sentenceCollection.expandedSentences);
+        // By default, we sort the output sentences. This should make it neater to compare
+        // 'before and after' vesions of all expanded sentences, irrespective of the input source
+        //  details/order, or the vagueries of the expansion logic:
+        sentenceCollection.expandedSentences.sort();
     }
 
     outputAlexa(data);

@@ -1,7 +1,9 @@
 
 import { DryUttExpanderData, SourceSlot, SourceIntent } from './types';
 
-const LOG = console.log;
+var debug = require('debug')('dry-interaction-expander:expand-sentences');
+const LOG = debug;
+const WARN = console.warn;
 
 interface AlexaIntent {
     name: string,
@@ -42,10 +44,12 @@ export function outputAlexa(data: DryUttExpanderData) {
     for (let sourceIntent of data.intents) {
         let alexaIntent: AlexaIntent = { name: sourceIntent.name, samples: [], slots: [] };
         for (let sentence of sourceIntent.expandedSentences) {
-            // TODO: Re-format slots like "<number>" into Alexa format:
-            alexaIntent.samples.push(sentence);
+
+            alexaIntent.samples.push(
+                // Reformat <slot> to {slot}:
+                sentence.replace(/(<([a-zA-Z_][a-zA-Z0-9_-]*)>)/g, "{$2}")
+            );
         }
-        // TODO: Add Slot data into Intent, in Alexa format.
         for (let slot of sourceIntent.getSlots()) {
             alexaIntent.slots.push(slot);
         }
@@ -55,8 +59,19 @@ export function outputAlexa(data: DryUttExpanderData) {
         // And finally, push the Intent into the Alexa output model:
         alexaModel.intents.push(alexaIntent);
     }
+    for (let sourceEntity of data.entities) {
+        let alexaEntity: AlexaEntity = { name: sourceEntity.name, values: [] };
+        for (let sentence of sourceEntity.expandedSentences) {
+            // Alexa entity values have a strange format:
+            alexaEntity.values.push({ name: { value: sentence } });
+        }
 
-    LOG(JSON.stringify(AlexaJson, null, 2));
+        if (alexaEntity.values.length == 0) delete alexaEntity.values;
+
+        alexaModel.types.push(alexaEntity);
+    }
+
+    console.log(JSON.stringify(AlexaJson, null, 2));
 
 
 }

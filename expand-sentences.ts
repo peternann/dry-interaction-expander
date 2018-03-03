@@ -1,7 +1,8 @@
 
 import { DryUttExpanderData, SourceIntent } from './types';
 
-const LOG = console.log;
+var debug = require('debug')('dry-interaction-expander:expand-sentences');
+const LOG = debug;
 const WARN = console.warn;
 
 
@@ -27,72 +28,60 @@ const reVanillaOrInSquareBrackets = new RegExp("\\[(" + vanillaTextWithOrRe + ")
 const reSlot = new RegExp(slotRe, 'g');
 
 
-export function expandSentences(data: DryUttExpanderData, intent: SourceIntent) {
-    console.log(`Processing Intent: "${intent.name}"`);
-    intent.expandedSentences = [];
-    /** A temporary array storing sentence permutations DURING expansion: */
-    let expanding: string[] = [];
-    for (let sourceSentence of intent.sourceSentences) {
+/** Expand the given sentence, pushing output permutations onto outputArray */
+export function expandSentence(sourceSentence: string, data: DryUttExpanderData, outputArray: string[]) {
 
-        // Pull a sentence from 'source' and pop it onto 'expanding':
-        //let sourceSentence = sentences.source.pop();
-        expanding.push('(' + sourceSentence + ')');
+    /** Working array - We store (potentially) expandable items here: */
+    let expanding: string[] = ['(' + sourceSentence + ')'];
 
-        // Now keep expanding what is on 'expanding', until all expanded fully onto 'sentences.expanded':
-        while (expanding.length > 0) {
+    // Now keep expanding what is on 'expanding', until all expanded fully onto outputArray:
+    while (expanding.length > 0) {
 
-            let sentence = expanding.pop();
-            console.log(`Processing Sentence: ${sentence}`);
-            let match;
+        let sentence = expanding.pop();
+        LOG(`Processing Sentence: ${sentence}`);
+        let match;
 
-            if (reAllVanilla.exec(sentence)) {
-                // Sentence is all vanilla characters - Time to emit:
-                // (But first check any slot references for sanity)
-                while (null !== (match = reSlot.exec(sentence))) {
-                    let slotName = match[1];
-                    if (!intent.getSlot(slotName)) {
-                        WARN(`Undefined slot '${slotName}' referenced via sentence source: "${sourceSentence}" `)
-                    }
-                }
-                intent.newExpandedSentence(sentence);
-            } else if (null != (match = reVariableUsage.exec(sentence))) {
-                // Variable usage:
-                let varName = match[1].toLowerCase();
-                let varValue = data.vars[varName];
-                // Sentence, with variable replace with its contents:
-                // Note that variables always get brackets to deal with '|' structures properly:
-                expanding.push(expandMatch(sentence, match, '(' + varValue + ')'));
-            } else if (null != (match = reVanillaOrInRoundBrackets.exec(sentence))) {
-                // Simple text within brackets, POSSIBLY containing a pipe:
-                LOG(`Processing simple / '|' contruct: ${match[0]}`);
-                // Note that the 'split' logic devolves to a single item if no '|' exists:
-                let split = match[1].split('|');
-                for (let variant of split) {
-                    LOG(`Variant: ${variant}`);
-                    expanding.push(expandMatch(sentence, match, variant));
-                }
-            } else if (null != (match = reVanillaOrInSquareBrackets.exec(sentence))) {
-                // Optionality construct, possibly containing an 'OR':
-                // Like '[a]' or '[a|b]':
-                LOG(`Processing optionality contruct: ${match[0]}`);
-                let split = match[1].split('|');
-                for (let variant of split) {
-                    LOG(`Variant: ${variant}`);
-                    expanding.push(expandMatch(sentence, match, variant));
-                }
-                // Effect the optionality - With replacement empty:
-                expanding.push(expandMatch(sentence, match, ''));
-            } else {
-                LOG(`!!!! Whoah! Can't grok sentence: "${sentence}"`);
+        if (reAllVanilla.exec(sentence)) {
+            // Sentence is all vanilla characters - Time to emit:
+            // (But first check any slot references for sanity)
+            while (null !== (match = reSlot.exec(sentence))) {
+                let slotName = match[1];
+                // if (!intent.getSlot(slotName)) {
+                //     WARN(`Undefined slot '${slotName}' referenced via sentence source: "${sourceSentence}" `)
+                // }
             }
+            outputArray.push(sentence);
+        } else if (null != (match = reVariableUsage.exec(sentence))) {
+            // Variable usage:
+            let varName = match[1].toLowerCase();
+            let varValue = data.vars[varName];
+            // Sentence, with variable replace with its contents:
+            // Note that variables always get brackets to deal with '|' structures properly:
+            expanding.push(expandMatch(sentence, match, '(' + varValue + ')'));
+        } else if (null != (match = reVanillaOrInRoundBrackets.exec(sentence))) {
+            // Simple text within brackets, POSSIBLY containing a pipe:
+            LOG(`Processing simple / '|' contruct: ${match[0]}`);
+            // Note that the 'split' logic devolves to a single item if no '|' exists:
+            let split = match[1].split('|');
+            for (let variant of split) {
+                LOG(`Variant: ${variant}`);
+                expanding.push(expandMatch(sentence, match, variant));
+            }
+        } else if (null != (match = reVanillaOrInSquareBrackets.exec(sentence))) {
+            // Optionality construct, possibly containing an 'OR':
+            // Like '[a]' or '[a|b]':
+            LOG(`Processing optionality contruct: ${match[0]}`);
+            let split = match[1].split('|');
+            for (let variant of split) {
+                LOG(`Variant: ${variant}`);
+                expanding.push(expandMatch(sentence, match, variant));
+            }
+            // Effect the optionality - With replacement empty:
+            expanding.push(expandMatch(sentence, match, ''));
+        } else {
+            LOG(`!!!! Whoah! Can't grok sentence: "${sentence}"`);
         }
     }
-    // All sentences for the intent expanded.
-
-    // By default, we sort the output sentences. This should make it neater to compare
-    // 'before and after' vesions of all expanded sentences, irrespective of the input source
-    //  details/order, or the vaugueries of the expansion logic:
-    intent.expandedSentences.sort();
 }
 
 /** Shorthand: Replace the given RegEx match in sentence, with replacement: */
