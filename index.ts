@@ -21,38 +21,37 @@ const defaultOutputFolder = "./interaction-models";
 const alexaSubFolder = "/alexa-ask";
 
 commander
-    .version('0.1.0')
     .description("Processes 'DRY' (Don't Repeat Yourself) interaction model source into voice assistant platform formats")
-    .usage("[options] <source_file>")
-    .option('-a, --alexa', 'Produce Alexa ASK output (default on)')
-    .option('-d, --dialogflow', 'Produce Dialogflow (Google) output (default on)')
+    .usage("[options] <-a path and/or -d path> <source_file>")
+    .option('-a, --alexa <path>', "Produce Alexa ASK output into 'path/'")
+    .option('-d, --dialogflow <path>', "Produce Dialogflow (Google) output into 'path/'")
     .option('-n, --no-order', "Don't order (alphabetise) output")
-    .option('-o, --output <path>', `Generate output into the specified folder (default: ${defaultOutputFolder}/`)
+    .version('0.1.0')
     .parse(process.argv);
 
-// If neither target specified, then default is both targets:
-if (!commander.alexa && !commander.dialogflow) commander.alexa = commander.dialogflow = true;
+/** Helper function to show usage and exit */
+function usage() { commander.help(); process.exit(1) }
+
+// If neither target specified, we've got nothing to do:
+if (!commander.alexa && !commander.dialogflow) {
+    ERROR("ERROR: One of either -a or -d must be given.");
+    usage();
+}
 
 if (!commander.output) commander.output = defaultOutputFolder;
 if (!fs.existsSync(commander.output + "/.")) {
     ERROR(`ERROR: Output folder '${commander.output}' does not exist. Please create it or use '-o <path>' option.`);
-    commander.help();
-    process.exit(1);
+    usage();
 }
 
 if (commander.alexa) {
-    if (fs.existsSync(commander.output + alexaSubFolder + '/.')) {
+    if (fs.existsSync(commander.alexa + '/.')) {
         LOG("Alexa folder OK - Carry on.");
     } else {
-        try {
-            fs.mkdirSync(commander.output + alexaSubFolder);
-        } catch (e) {
-            ERROR(`ERROR: Can't create required output folder: '${commander.output + alexaSubFolder}': ${e.message}`);
-            process.exit(1);
-        }
+        ERROR(`ERROR: Alexa folder specified does not exist: '${commander.alexa}'`);
+        process.exit(1);
     }
 }
-
 
 if (commander.args.length < 1) {
     ERROR("index: ERROR: No <source_file> given.")
@@ -100,7 +99,7 @@ function produceOutput() {
         sentenceCollection.expandedSentences.sort();
     }
 
-    outputAlexa(data, commander.output + alexaSubFolder);
+    outputAlexa(data, commander.alexa);
 
 }
 

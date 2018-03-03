@@ -23,6 +23,8 @@
             "program": "${workspaceRoot}/node_modules/ts-node/dist/_bin.js",
             "args": [
                 "index.ts",
+                "-a",
+                "interaction-models/alexa-ask",
                 "test.yaml",
             ],
             "cwd": "${workspaceRoot}",
