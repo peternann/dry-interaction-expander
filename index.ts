@@ -4,26 +4,19 @@ import * as commander from 'commander';
 import * as fs from 'fs';
 
 
-import { DryUttExpanderData, SentenceCollection } from './types';
+import { DryUttExpanderData } from './types';
 import { readSource } from './read-source';
-import { expandSentence } from './expand-sentences';
-import { outputAlexa } from './output-alexa';
-import { outputDialogflow } from './output-dialogflow';
+import { produceOutput } from './output';
 
 var debug = require('debug')('dry-interaction-expander:index');
 const LOG = debug;
 const ERROR = console.error;
 
-
-/** Our main internal data storage global */
-var data = new DryUttExpanderData();
+// Declare 'global' variable for convenient access to source NL data:
 declare var global: any;
-global.dieData = data;
 
 
-const defaultOutputFolder = "./interaction-models";
-const alexaSubFolder = "/alexa-ask";
-
+// Define our CLI interface with 'commander' package:
 commander
     .description("Processes 'DRY' (Don't Repeat Yourself) interaction model source into voice assistant platform formats")
     .usage("[options] <-a path and/or -d path> <source_file>")
@@ -60,57 +53,30 @@ if (commander.args.length < 1) {
     ERROR("index: ERROR: No <source_file> given.")
     commander.help();
     process.exit(1);
-} else {
-    var currentArg = 0;
-
-    // Read the first source file, and chain to read others:
-    nextSource();
-
-    /** Function to read all source files. Uses Promise.then() chaining to deal with async read: */
-    function nextSource() {
-        LOG("Reading source file:", commander.args[currentArg]);
-        readSource(commander.args[currentArg], data)
-            .then(() => {
-                if (++currentArg < commander.args.length)
-                    nextSource();
-                else   // Done reading input. Produce output:
-                    produceOutput();
-            })
-            .catch((err) => {
-                ERROR("ERROR:", err);
-            });
-    }
 }
 
-function produceOutput() {
-    LOG("produceOutput():...");
+//
+// ################################################################################################
+// #### Finally, process the files and produce output:
+// #### We do separate runs for each platform, to cater for platform-directives in source:
+// ################################################################################################
+//
 
-    // Sort intents, to make output insentitive to input source details:
-    data.intents.sort((i1, i2) => { return (i1.name < i2.name) ? +1 : -1 });
-
-    // We can expand the sentences in Intents and Entities in one loop since they
-    // both are SentenceCollections:
-    let BothCollections: SentenceCollection[] = data.intents;
-    BothCollections = BothCollections.concat(data.entities);
-    for (var sentenceCollection of BothCollections) {
-        sentenceCollection.expandedSentences = [];
-        for (let sourceSentence of sentenceCollection.sourceSentences)
-            expandSentence(sourceSentence, data, sentenceCollection.expandedSentences);
-        // By default, we sort the output sentences. This should make it neater to compare
-        // 'before and after' vesions of all expanded sentences, irrespective of the input source
-        //  details/order, or the vagueries of the expansion logic:
-        sentenceCollection.expandedSentences.sort();
-    }
-
-    if (commander.alexa) {
-        outputAlexa(data, commander.alexa);
-    }
-    if (commander.dialogflow) {
-        outputDialogflow(data, commander.dialogflow);
-    }
-
-    console.log("Done.");
-    process.exit(0);
-
+if (commander.alexa) {
+    global.dieData = new DryUttExpanderData();
+    for (let sourceFile of commander.args)
+        readSource(sourceFile, 'a');
+    produceOutput('a', commander.alexa);
 }
+
+if (commander.dialogflow) {
+    global.dieData = new DryUttExpanderData();
+    for (let sourceFile of commander.args)
+        readSource(sourceFile, 'd');
+    produceOutput('d', commander.dialogflow);
+}
+
+// Processing finished, seemingly OK:
+console.log("Done.");
+process.exit(0);
 

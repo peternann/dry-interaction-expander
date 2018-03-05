@@ -1,5 +1,7 @@
 
-import * as readLineByLine from 'linebyline';
+import * as fs from 'fs';
+
+import { LineReader } from './line-reader';
 import { DryUttExpanderData, SourceIntent } from './types';
 
 var debug = require('debug')('dry-interaction-expander:read-source');
@@ -7,65 +9,66 @@ const LOG = debug;
 const WARN = console.warn;
 const ERROR = console.error;
 
+/** 'global' object contains our source data: */
+declare var global: { dieData: DryUttExpanderData };
 
-export function readSource(sourceFile: string, data: DryUttExpanderData): Promise<string> {
 
-    return new Promise((resolve, reject) => {
-        readLineByLine(sourceFile)
-            .on('line', function (line, lineCount, byteCount) {
-                let originalLine = line;
-                line = line.trim();
-                LOG('Got (trimmed) line:', ('"' + line + '"'));
-                var match;
+export function readSource(sourceFile: string, platform: string) {
 
-                if ((match = line.match(/(.*)(#.*)$/i)) !== null) {
-                    LOG(`Erasing comment:${match[2]}`);
-                    line = match[1].trim();
-                }
+    let data = global.dieData;
 
-                // Clean whitespace:
-                line = line
-                    .replace(/\s+$/, '')       // - Trim trailing
-                    .replace(/\s\s+/g, ' ');   // - Compact any multiples to one ' '
 
-                if (line.length == 0) {
-                    LOG("Ignoring empty line...");
+    let reader = new LineReader(sourceFile);
+    let line: string, originalLine: string;
+    let lineCount: number = 0;
+    while (null !== (line = reader.nextLine())) {
+        ++lineCount;
 
-                    // By having the 'normal sentence' RegEx near the top, I assume we save CPU by not
-                    // having to do the othes, HOWEVER this may or not be optimal...
-                } else if ((match = line.match(/^[^:=]+$/i)) !== null) {
-                    // Anything without a colon or equals we take to be a sentence line:
-                    // Probably we could be a lot smarter:
-                    gotUtterance(line);
-                } else if ((match = line.match(/^([a-z0-9_-]+)\s*=\s*(.*)$/i)) !== null) {
-                    gotVarDecl(line, match);
-                } else if ((match = line.match(/^INVOCATION_NAME:\s*([a-z0-9_ -]+)$/i)) !== null) {
-                    data.invocationName = match[1];
-                    LOG("Got Invocation name:", data.invocationName);
-                } else if ((match = line.match(/^INTENT:\s*(.+)$/i)) !== null) {
-                    gotIntentDecl(line, match);
-                } else if ((match = line.match(/^SLOT:\s*([a-z0-9_-]+)(:([a-z0-9_.-]+))?\s*$/i)) !== null) {
-                    gotSlotDecl(line, match);
-                } else if ((match = line.match(/^ENTITY:\s*([a-z0-9_-]+)$/i)) !== null) {
-                    gotEntityDecl(line, match);
-                } else if ((match = line.match(/^LANG(UAGE)?:\s*([a-z0-9._-]+)$/i)) !== null) {
-                    data.lang = match[2];
-                    LOG(`Got Language Decl: "${data.lang}"`);
-                } else {
-                    // Only reason we get here (currently), is a colon in an unrecognised line:
-                    ERROR(`ERROR: Malformed line: "${originalLine}", located at:\n${sourceFile}:${lineCount}`);
-                    process.exit(1);
-                }
+        originalLine = line;
+        line = line.trim();
+        LOG('Got (trimmed) line:', ('"' + line + '"'));
+        var match;
 
-            })
-            .on('error', (e) => {
-                // something went wrong 
-                reject(e);
-            })
-            .on('end', () => { resolve("OK") });
+        if ((match = line.match(/(.*)(#.*)$/i)) !== null) {
+            LOG(`Erasing comment:${match[2]}`);
+            line = match[1].trim();
+        }
 
-    });
+        // Clean whitespace:
+        line = line
+            .replace(/\s+$/, '')       // - Trim trailing
+            .replace(/\s\s+/g, ' ');   // - Compact any multiples to one ' '
 
+        if (line.length == 0) {
+            LOG("Ignoring empty line...");
+
+            // By having the 'normal sentence' RegEx near the top, I assume we save CPU by not
+            // having to do the othes, HOWEVER this may or not be optimal...
+        } else if ((match = line.match(/^[^:=]+$/i)) !== null) {
+            // Anything without a colon or equals we take to be a sentence line:
+            // Probably we could be a lot smarter:
+            gotUtterance(line);
+        } else if ((match = line.match(/^([a-z0-9_-]+)\s*=\s*(.*)$/i)) !== null) {
+            gotVarDecl(line, match);
+        } else if ((match = line.match(/^INVOCATION_NAME:\s*([a-z0-9_ -]+)$/i)) !== null) {
+            data.invocationName = match[1];
+            LOG("Got Invocation name:", data.invocationName);
+        } else if ((match = line.match(/^INTENT:\s*(.+)$/i)) !== null) {
+            gotIntentDecl(line, match);
+        } else if ((match = line.match(/^SLOT:\s*([a-z0-9_-]+)(:([a-z0-9_.-]+))?\s*$/i)) !== null) {
+            gotSlotDecl(line, match);
+        } else if ((match = line.match(/^ENTITY:\s*([a-z0-9_-]+)$/i)) !== null) {
+            gotEntityDecl(line, match);
+        } else if ((match = line.match(/^LANG(UAGE)?:\s*([a-z0-9._-]+)$/i)) !== null) {
+            data.lang = match[2];
+            LOG(`Got Language Decl: "${data.lang}"`);
+        } else {
+            // Only reason we get here (currently), is a colon in an unrecognised line:
+            ERROR(`ERROR: Malformed line: "${originalLine}", located at:\n${sourceFile}:${lineCount}`);
+            process.exit(1);
+        }
+    }
+    return;
 
     function gotVarDecl(line, match) {
         let name = match[1].toLowerCase();
