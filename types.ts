@@ -39,7 +39,7 @@ export class SourceIntent extends SentenceCollection {
         if (!this.getSlot(slotName))
             this.slots.push({ name: slotName, type: slotType });
     }
-    public getSlot(slotName: string) {
+    public getSlot(slotName: string): SourceSlot {
         return this.slots.find((testSlot) => { return testSlot.name == slotName });
     }
     public getSlots(): SourceSlot[] {
