@@ -8,6 +8,7 @@ import { DryUttExpanderData, SentenceCollection } from './types';
 import { readSource } from './read-source';
 import { expandSentence } from './expand-sentences';
 import { outputAlexa } from './output-alexa';
+import { outputDialogflow } from './output-dialogflow';
 
 var debug = require('debug')('dry-interaction-expander:index');
 const LOG = debug;
@@ -16,6 +17,9 @@ const ERROR = console.error;
 
 /** Our main internal data storage global */
 var data = new DryUttExpanderData();
+declare var global: any;
+global.dieData = data;
+
 
 const defaultOutputFolder = "./interaction-models";
 const alexaSubFolder = "/alexa-ask";
@@ -38,15 +42,17 @@ if (!commander.alexa && !commander.dialogflow) {
     usage();
 }
 
-if (commander.alexa) {
-    // Remove any trailing slahes: They look bad on error output:
-    commander.alexa = commander.alexa.replace(/\/+$/, '');
+for (let platform of ['alexa', 'dialogflow']) {
+    if (commander[platform]) {
+        // Remove any trailing slashes: They look bad on error output:
+        commander[platform] = commander[platform].replace(/\/+$/, '');
 
-    if (fs.existsSync(commander.alexa + '/.')) {
-        LOG("Alexa folder OK - Carry on.");
-    } else {
-        ERROR(`ERROR: Alexa folder specified does not exist: '${commander.alexa}'`);
-        process.exit(1);
+        if (fs.existsSync(commander[platform] + '/.')) {
+            LOG("${platform} output folder OK - Carry on.");
+        } else {
+            ERROR(`ERROR: ${platform} folder specified does not exist: '${commander[platform]}'`);
+            process.exit(1);
+        }
     }
 }
 
@@ -96,7 +102,12 @@ function produceOutput() {
         sentenceCollection.expandedSentences.sort();
     }
 
-    outputAlexa(data, commander.alexa);
+    if (commander.alexa) {
+        outputAlexa(data, commander.alexa);
+    }
+    if (commander.dialogflow) {
+        outputDialogflow(data, commander.dialogflow);
+    }
 
     console.log("Done.");
     process.exit(0);
