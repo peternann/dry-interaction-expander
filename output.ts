@@ -5,7 +5,7 @@ import { expandSentence } from './expand-sentences';
 import { outputAlexa } from './output-alexa';
 import { outputDialogflow } from './output-dialogflow';
 
-var debug = require('debug')('dry-interaction-expander:index');
+var debug = require('debug')('dry-interaction-expander:output');
 const LOG = debug;
 const ERROR = console.error;
 
