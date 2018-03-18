@@ -30,51 +30,61 @@ export function outputDialogflow(outputFolder: string) {
     LOG("outputDialogflow()...");
     let fd: number, outfilePath: string;
 
+    //checkAgentRootFiles(outputFolder);
+
     let data = global.dieData;
 
-    const intentsPath = `${outputFolder}/intents`;
-    const entitiesPath = `${outputFolder}/entities`;
-    if (data.intents.length > 0) mkdir(intentsPath);
-    if (data.entities.length > 0) mkdir(entitiesPath);
+    // const intentsPath = `${outputFolder}/intents`;
+    // const entitiesPath = `${outputFolder}/entities`;
+    // if (data.intents.length > 0) mkdir(intentsPath);
+    // if (data.entities.length > 0) mkdir(entitiesPath);
     const lang = data.lang.substr(0, 2);
     let comma: string;   // - Array separator mechanism
 
 
     // For each Intent, write out the 'usersays' file:
-    for (let sourceIntent of data.intents) {
-        outfilePath = `${intentsPath}/${sourceIntent.name}_usersays_${lang}.json`;
-        try {
-            fd = fs.openSync(outfilePath, 'w');
-            fs.appendFileSync(fd, '[');
-            console.log(`Writing to ${outfilePath}`);
-            comma = "";
-            for (let sentence of sourceIntent.expandedSentences) {
-                let userSaysItem = getDialogflowUserSaysItem(sentence, sourceIntent);
-                fs.appendFileSync(fd, comma + '\n' + JSON.stringify(userSaysItem, null, 2));
-            }
-            fs.appendFileSync(fd, '\n]');
-            fs.closeSync(fd);
-        } catch (err) {
-            ERROR(`ERROR: ${err}\nWriting Dialogflow intent file: ${outfilePath}`);
-            process.exit(1);
-        }
-    }
+    // for (let sourceIntent of data.intents) {
+    //     outfilePath = `${intentsPath}/${sourceIntent.name}_usersays_${lang}.json`;
+    //     try {
+    //         fd = fs.openSync(outfilePath, 'w');
+    //         fs.appendFileSync(fd, '[');
+    //         console.log(`Writing to ${outfilePath}`);
+    //         comma = "";
+    //         for (let sentence of sourceIntent.expandedSentences) {
+    //             let userSaysItem = getDialogflowUserSaysItem(sentence, sourceIntent);
+    //             fs.appendFileSync(fd, comma + '\n' + JSON.stringify(userSaysItem, null, 2));
+    //         }
+    //         fs.appendFileSync(fd, '\n]');
+    //         fs.closeSync(fd);
+    //     } catch (err) {
+    //         ERROR(`ERROR: ${err}\nWriting Dialogflow intent file: ${outfilePath}`);
+    //         process.exit(1);
+    //     }
+    // }
 
     // For each Entity, write out the 'entries' file:
     for (let sourceEntity of data.entities) {
-        outfilePath = `${entitiesPath}/${sourceEntity.name}_entries_${lang}.json`;
+        outfilePath = `${outputFolder}/ENTITY-${sourceEntity.name}.json`;
+
         try {
             fd = fs.openSync(outfilePath, 'w');
-            fs.appendFileSync(fd, '[');
+            fs.appendFileSync(fd,
+                `{\n` +
+                `"name": "",\n` +
+                `"displayName": "Animal",\n` +
+                `"kind": "KIND_MAP",\n` +
+                `"autoExpansionMode": "AUTO_EXPANSION_MODE_UNSPECIFIED",\n` +
+                `"entities": [`
+            );
             console.log(`Writing to ${outfilePath}`);
             let entityItem: DialogflowEntityItem;
             comma = "";   // - Array separator mechanism
             for (let sentence of sourceEntity.expandedSentences) {
                 entityItem = { value: sentence, synonyms: [sentence] };
                 fs.appendFileSync(fd, comma + '\n' + JSON.stringify(entityItem, null, 2));
-                if (comma == "") comma = ',';
+                if (comma === "") comma = ',';
             }
-            fs.appendFileSync(fd, '\n]');
+            fs.appendFileSync(fd, '\n]\n}');
             fs.closeSync(fd);
         } catch (err) {
             ERROR(`ERROR: ${err}\nWriting Dialogflow entity file: ${outfilePath}`);
@@ -112,6 +122,24 @@ function getDialogflowUserSaysItem(sentence: string, sourceIntent: SourceIntent)
 
     userSaysItem.data.push({ text: dfText, userDefined: false });
     return userSaysItem;
+}
+
+function checkAgentRootFiles(outputFolder: string) {
+    let path = `${outputFolder}/agent.json`;
+    let missing = false;
+    if (fs.existsSync(path) && fs.statSync(path).isFile()) {
+        // All good
+    } else {
+        WARN(`WARNING: Dialogflow Agent folder appears non-complete. Missing: ${path}`);
+        missing = true;
+    }
+    path = `${outputFolder}/package.json`;
+    if (!fs.accessSync(path)) {
+        WARN(`WARNING: Dialogflow Agent folder appears non-complete. Missing: ${path}`);
+    }
+    if (missing) {
+        WARN(`       : You may want to 'Export' and extract an existing project as a template.`);
+    }
 }
 
 
