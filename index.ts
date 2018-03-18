@@ -8,7 +8,7 @@ import { DryUttExpanderData } from './types';
 import { readSource } from './read-source';
 import { produceOutput } from './output';
 
-var debug = require('debug')('dry-interaction-expander:index');
+var debug = require('debug')('dry-vac:index');
 const LOG = debug;
 const ERROR = console.error;
 

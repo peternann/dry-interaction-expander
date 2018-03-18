@@ -2,7 +2,7 @@
 import { DryUttExpanderData, SourceSlot, SourceIntent } from './types';
 import * as fs from 'fs';
 
-var debug = require('debug')('dry-interaction-expander:output-dialogflow');
+var debug = require('debug')('dry-vac:output-dialogflow');
 const LOG = debug;
 const WARN = console.warn;
 const ERROR = console.error;
@@ -26,9 +26,11 @@ interface DialogflowUserSaysItem {
 };
 
 
-export function outputDialogflow(data: DryUttExpanderData, outputFolder: string) {
+export function outputDialogflow(outputFolder: string) {
     LOG("outputDialogflow()...");
     let fd: number, outfilePath: string;
+
+    let data = global.dieData;
 
     const intentsPath = `${outputFolder}/intents`;
     const entitiesPath = `${outputFolder}/entities`;

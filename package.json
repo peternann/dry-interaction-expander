@@ -1,7 +1,7 @@
 {
-  "name": "",
-  "description": "",
-  "version": "0.0.0",
+  "name": "dry-vac",
+  "description": "Voice Assistant Composer. Example sentences without repetition - not wet",
+  "version": "0.1.0",
   "private": true,
   "author": "Peter Nann",
   "homepage": "",
@@ -18,9 +18,12 @@
   "scripts": {
     "start": "nodemon index.js",
     "autorun": "nodemon -e ts,json,yaml index.ts test.yaml --exec ts-node",
+    "tsc-watch": "./inwin tsc --watch",
     "ask-deploy": "cd my-ask-clones/my-skill ; ask deploy --target model",
     "ask-deploy-model": "ask api update-model -l en-US -s $npm_package_config_my_skill_id -f ../ask-clones/Forget_me_not/models/en-US.json",
-    "ask-model-status": "ask api get-skill-status -s $npm_package_config_my_skill_id"
+    "ask-model-status": "ask api get-skill-status -s $npm_package_config_my_skill_id",
+    "#### Dialogflow scripts": "",
+    "df-authenticate": "gcloud auth activate-service-account --key-file=<service-account-key-file.json>"
   },
   "dependencies": {
     "commander": "^2.14.1",

@@ -1,7 +1,7 @@
 
 import { DryUttExpanderData, SourceIntent } from './types';
 
-var debug = require('debug')('dry-interaction-expander:expand-sentences');
+var debug = require('debug')('dry-vac:expand-sentences');
 const LOG = debug;
 const WARN = console.warn;
 

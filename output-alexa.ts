@@ -2,9 +2,12 @@
 import { DryUttExpanderData, SourceSlot, SourceIntent } from './types';
 import * as fs from 'fs';
 
-var debug = require('debug')('dry-interaction-expander:output-alexa');
+var debug = require('debug')('dry-vac:output-alexa');
 const LOG = debug;
 const WARN = console.warn;
+
+/** 'global' object contains our source data: */
+declare var global: { dieData: DryUttExpanderData };
 
 interface AlexaIntent {
     name: string,
@@ -36,8 +39,11 @@ let AlexaJson = {
     }
 };
 
-export function outputAlexa(data: DryUttExpanderData, outputFolder: string) {
+export function outputAlexa(outputFolder: string) {
     LOG("outputAlexa()...");
+
+    let data = global.dieData;
+
     let alexaModel = AlexaJson.interactionModel.languageModel;
 
     alexaModel.invocationName = data.invocationName;

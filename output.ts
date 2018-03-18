@@ -5,7 +5,7 @@ import { expandSentence } from './expand-sentences';
 import { outputAlexa } from './output-alexa';
 import { outputDialogflow } from './output-dialogflow';
 
-var debug = require('debug')('dry-interaction-expander:output');
+var debug = require('debug')('dry-vac:output');
 const LOG = debug;
 const ERROR = console.error;
 
@@ -35,10 +35,10 @@ export function produceOutput(platform: string, outPath: string) {
     }
 
     if (platform == 'a') {
-        outputAlexa(data, outPath);
+        outputAlexa(outPath);
     }
     if (platform == 'd') {
-        outputDialogflow(data, outPath);
+        outputDialogflow(outPath);
     }
 }
 

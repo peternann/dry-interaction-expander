@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import { LineReader } from './line-reader';
 import { DryUttExpanderData, SourceIntent } from './types';
 
-var debug = require('debug')('dry-interaction-expander:read-source');
+var debug = require('debug')('dry-vac:read-source');
 const LOG = debug;
 const WARN = console.warn;
 const ERROR = console.error;
