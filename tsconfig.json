@@ -1,0 +1,20 @@
+{
+    "compilerOptions": {
+        // Can be ES3 (Default), ES5, ES6 or ESNext:
+        //"target": "ES3",
+        // This says to assume the run-time environment supports ES2015:
+        "lib": [
+            "es2015"
+        ],
+        // Required to stop some imports from failing: Go Figure:
+        "moduleResolution": "node",
+        //"rootDir": "src",
+        "outDir": "bin",
+        "sourceMap": true,
+        // I like to see what's going on:
+        "listEmittedFiles": true
+    },
+    "include": [
+        "*.ts"
+    ]
+}

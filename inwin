@@ -1,0 +1,3 @@
+#!/bin/sh
+
+{ xterm -geom 120x55 -e "$*" ; sleep 5; }&
