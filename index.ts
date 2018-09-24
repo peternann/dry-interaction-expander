@@ -22,9 +22,9 @@ declare var global: any;
 commander
 	.description("Processes 'DRY' (Don't Repeat Yourself) interaction model source into voice assistant platform formats")
 	.usage("[options] <-a path and/or -d path> <source_file>")
-	.option('-a, --alexa <path>', "Produce Alexa ASK output into 'path/'")
+	.option('-a, --alexa <path>', "Modify/Produce Alexa ASK output into 'path/'")
 	// .action(path => commander.alexaPath = path)
-	.option('-d, --dialogflow <path>', "Produce Dialogflow (Google) output into 'path/'")
+	.option('-d, --dialogflow <path>', "Modify/Produce Dialogflow (Google) output into 'path/'")
 	// .action(path => commander.dfPath = path)
 	.option('-n, --no-order', "Don't order (alphabetise) output")
 	.option('--reverse', "CREATE source file FROM an Alexa or Dialogflow project folder.")
@@ -81,15 +81,15 @@ if (commander.reverse) {
 		reverseProcessDialogflow(commander.dialogflow, sourceFileToCreate);
 	}
 
-
-	process.exit(1);
+	// Make sure we do not continue to code further below:
+	process.exit();
 }
 
 //
 // ################################################################################################
 // #### Finally, process the files and produce output:
 // #### We do separate runs for each platform, to cater for platform-directives in source:
-// #### (Not terribly efficient, but run-time isn't that long anyway...)
+// #### (Not terribly efficient, but run-time duration isn't that long anyway...)
 // ################################################################################################
 //
 

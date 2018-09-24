@@ -14,7 +14,7 @@ const WARN = console.warn;
 const textRe = "[a-zA-Z0-9 '-]+";
 const identifierRe = "[a-zA-Z_][a-zA-Z0-9_-]*";
 /** Slot RegExp matches like "<MySlot>" or "<some example=MySlot>": */
-const slotRe = `<((${textRe})=)?(${identifierRe})>`;
+const slotRe = `<((${identifierRe})(:${textRe})?)>`;
 /** Vanilla text is either simple text chars, OR a slot definition: */
 const vanillaTextRe = "([a-zA-Z0-9 '-]|(" + slotRe + "))+";
 /** Same as item above, but also allowing literal 'OR' pipe: '|' */
@@ -26,6 +26,7 @@ const reAllVanilla = new RegExp("^(" + vanillaTextRe + ")$");
 const reVariableUsage = new RegExp("\\$(" + identifierRe + ")");
 const reVanillaOrInRoundBrackets = new RegExp("\\((" + vanillaTextWithOrRe + ")\\)");
 const reVanillaOrInSquareBrackets = new RegExp("\\[(" + vanillaTextWithOrRe + ")\\]");
+const reVanillaOrInNoBracketsWholeLine = new RegExp(`^(${vanillaTextWithOrRe})$`);
 const reSlot = new RegExp(slotRe, 'g');
 
 
@@ -33,7 +34,9 @@ const reSlot = new RegExp(slotRe, 'g');
 export function expandSentence(sourceSentence: string, data: DryUttExpanderData, outputArray: string[]) {
 
 	/** Working array - We store (potentially) expandable items here: */
-	let expanding: string[] = ['(' + sourceSentence + ')'];
+	let expanding: string[] = [sourceSentence];
+	// Used to have this, not sure why:
+	// let expanding: string[] = ['(' + sourceSentence + ')'];
 
 	// Now keep expanding what is on 'expanding', until all expanded fully onto outputArray:
 	while (expanding.length > 0) {
@@ -64,7 +67,7 @@ export function expandSentence(sourceSentence: string, data: DryUttExpanderData,
 			expanding.push(expandMatch(sentence, match, '(' + varValue + ')'));
 		} else if (null != (match = reVanillaOrInRoundBrackets.exec(sentence))) {
 			// Simple text within brackets, POSSIBLY containing a pipe:
-			LOG(`Processing simple / '|' contruct: ${match[0]}`);
+			LOG(`Processing simple -or- '|' contruct (in round brackets): ${match[0]}`);
 			// Note that the 'split' logic devolves to a single item if no '|' exists:
 			let split = match[1].split('|');
 			for (let variant of split) {
@@ -73,7 +76,7 @@ export function expandSentence(sourceSentence: string, data: DryUttExpanderData,
 			}
 		} else if (null != (match = reVanillaOrInSquareBrackets.exec(sentence))) {
 			// Optionality construct, possibly containing an 'OR':
-			// Like '[a]' or '[a|b]':
+			// Like '[a]' or '[a|b]' or even '[a b|c]:
 			LOG(`Processing optionality contruct: ${match[0]}`);
 			let split = match[1].split('|');
 			for (let variant of split) {
@@ -82,8 +85,23 @@ export function expandSentence(sourceSentence: string, data: DryUttExpanderData,
 			}
 			// Effect the optionality - With replacement empty:
 			expanding.push(expandMatch(sentence, match, ''));
+
+			// Make sure the 'no brackets' case expands latest to ensure all brackets are done first:
+			// Actually - Maybe this should go first, and later we deal with brackets... Dunno!
+		} else if (null != (match = reVanillaOrInNoBracketsWholeLine.exec(sentence))) {
+			// Simple text with NO brackets, POSSIBLY containing a pipe:
+			LOG(`Processing simple -or- '|' contruct (No brackets): ${match[0]}`);
+			// Note that the 'split' logic devolves to a single item if no '|' exists:
+			let split = match[1].split('|');
+			for (let variant of split) {
+				LOG(`Variant: ${variant}`);
+				expanding.push(expandMatch(sentence, match, variant));
+			}
+		} else if (null != (match = sentence.match((/^([a-z0-9 _'-]+)\s*~\s*(.*)$/i)))) {
+			LOG(`Got Entity synonym set. Leave verbatim: "${sentence}"`);
+			outputArray.push(sentence);
 		} else {
-			LOG(`!!!! Whoah! Can't grok sentence: "${sentence}"`);
+			LOG(`!!!! Whoah! Can't grok sentence! Ignored: "${sentence}"`);
 		}
 	}
 }

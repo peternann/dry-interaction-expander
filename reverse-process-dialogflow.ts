@@ -4,6 +4,7 @@ import * as fs from "fs";
 var debug = require('debug')('dry-vac:reverse-process-dialogflow');
 const LOG = debug;
 const ERROR = console.error;
+const SAY = console.log;
 
 
 function exists(path) { return fs.existsSync(path) }
@@ -18,9 +19,14 @@ export function reverseProcessDialogflow(dfFolder, fileToCreate) {
 
 		reverseProcessDFV1(dfFolder, fileToCreate);
 	} else {
-		ERROR(`ERROR: TODO: code does not exist for non-V1 Dialogflow reverse processing!`);
+		ERROR(`ERROR: TODO: code does not exist for V2 Dialogflow reverse processing!`);
 	}
 
+	process.on('exit', () => {
+		if (fs.existsSync(fileToCreate))
+			SAY(`Created file ${fileToCreate}.\nSuccessful if no errors reported.`);
+		process.exit(0);
+	});
 
 }
 
@@ -57,7 +63,7 @@ export function reverseProcessDFV1(dfFolder, fileToCreate) {
 			for (let item of entityValues) {
 				let itemLine = item.value;
 				if (item.synonyms && item.synonyms.length > 0)
-					itemLine += ' = ' + item.synonyms.join('/');
+					itemLine += ' ~ ' + item.synonyms.join('|');
 				doWrite('  ' + itemLine);
 			}
 		}
@@ -85,8 +91,8 @@ export function reverseProcessDFV1(dfFolder, fileToCreate) {
 						// TODO: Should check that any slot appearing always has a consistent meta:
 						slotSet[snippet.alias] = snippet.meta.substr(1)
 						// Include the text and alias in the sentence output:
-						// Like: "colour is <light blue=color>"
-						itemLine += `<${snippet.text}=${snippet.alias}>`
+						// Like: "colour is <color:light blue>"
+						itemLine += `<${snippet.alias}:${snippet.text}>`
 					} else {
 						// Dialogflow lines may still have content like "find me some @fuelTypeEntity:fuelType":
 						// In this case, the 'type' is on the left, and the alias/handle on the right:

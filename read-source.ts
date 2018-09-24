@@ -2,7 +2,7 @@
 import * as fs from 'fs';
 
 import { LineReader } from './line-reader';
-import { DryUttExpanderData, SourceIntent } from './types';
+import { DryUttExpanderData, SourceEntity, SourceIntent } from './types';
 
 var debug = require('debug')('dry-vac:read-source');
 const LOG = debug;
@@ -29,10 +29,10 @@ export function readSource(sourceFile: string, platform: string) {
 		line = line.trim();
 		var match;
 
-		// Trim off any comments: (Also taking preceding whitespace with it)
-		if ((match = line.match(/(.*)(\s*#.*)$/i)) !== null) {
+		// Trim off any comments:
+		if ((match = line.match(/(.*?)(#.*)$/i)) !== null) {
 			LOG(`Erasing comment:${match[2]}`);
-			line = match[1];
+			line = match[1].trim();
 		}
 
 		// - Compact any multiple space to one ' '
@@ -45,7 +45,7 @@ export function readSource(sourceFile: string, platform: string) {
 			LOG("Ignoring empty line...");
 
 			// By having the 'normal sentence' RegEx near the top, I assume we save CPU by not
-			// having to do the othes, HOWEVER this may or not be optimal...
+			// having to do the othes, HOWEVER this may or may not be optimal...
 		} else if ((match = line.match(/^[^:=]+$/)) !== null
 			// But slots can have : and =, so more complex sentence RegEx to catch them:
 			// (Slots simply bounded by matching '<>' pairs)
@@ -53,6 +53,10 @@ export function readSource(sourceFile: string, platform: string) {
 			// Anything without a colon or equals we take to be a sentence line:
 			// Probably we could be a lot smarter:
 			gotUtterance(line);
+
+			// "~" is used for synonym declarations with an entity:
+		} else if ((match = line.match(/^([a-z0-9 _'-]+)\s*~\s*(.*)$/i)) !== null) {
+			gotEntity(line);
 		} else if ((match = line.match(/^\$([a-z0-9_-]+)\s*=\s*(.*)$/i)) !== null) {
 			gotVarDecl(line, match);
 		} else if ((match = line.match(/^INVOCATION_NAME:\s*([a-z0-9_ -]+)$/i)) !== null) {
@@ -67,6 +71,9 @@ export function readSource(sourceFile: string, platform: string) {
 		} else if ((match = line.match(/^LANG(UAGE)?:\s*([a-z0-9._-]+)$/i)) !== null) {
 			data.lang = match[2];
 			LOG(`Got Language Decl: "${data.lang}"`);
+		} else if ((match = line.match(/^WEBHOOK:\s*(.+)$/i)) !== null) {
+			data.webhook = match[1];
+			LOG(`Got Webhook: "${data.webhook}"`);
 		} else {
 			// Only reason we get here (currently), is a colon in an unrecognised line:
 			ERROR(`ERROR: Malformed line: "${originalLine}", located at:\n${sourceFile}:${lineCount}`);
@@ -94,9 +101,16 @@ export function readSource(sourceFile: string, platform: string) {
 		data.setEntity(name);
 	}
 
-	function gotSlotDecl(line, match) {
+	/**
+	 * 
+	 * @param line The line that the slot decl was detected in
+	 * @param match A RegExpmatch result for a spotted slot decl
+	 */
+	function gotSlotDecl(line: string, match: string) {
 		// See RegEx used above:
 		let name = match[1],
+			// - Note that match[3] may be 'undefined', if the type was not stated:
+			// - This means the type was not explicit, which generally means: type === name.
 			type = match[3];
 		LOG(`Got Slot: "${name}:${type}"`);
 		if (data.currentCollection instanceof SourceIntent) {
@@ -111,6 +125,18 @@ export function readSource(sourceFile: string, platform: string) {
 		data.currentCollection.addSentence(utt);
 	}
 
+	function gotEntity(line) {
+		LOG(`Got Entity item: "${line}"`);
+		// if (data.currentCollection.constructor.name === 'SourceEntity') {
+		if (data.currentCollection instanceof SourceEntity) {
+			data.currentCollection.addSentence(line);
+		} else {
+			ERROR(`Entity with synonym detected outside entity decl.\nLine: ${line}`);
+			ERROR(`Current collection type: ${data.currentCollection.constructor.name}`);
+			process.exit(1);
+		}
+
+	}
 }
 
 
