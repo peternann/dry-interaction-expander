@@ -2,7 +2,6 @@
 /** A simple interface to define a type that we can add sentences to */
 export class SentenceCollection {
 	name: string;
-	// type: string;
 	sourceSentences: string[];
 	expandedSentences: string[];
 
@@ -34,7 +33,6 @@ export class SourceIntent extends SentenceCollection {
 	constructor(name: string) {
 		super(name);
 		this.slots = [];
-		// this.type = 'intent';
 	}
 
 	public setSlot(slotName: string, slotType: string) {

@@ -283,6 +283,12 @@ function getDialogflowV2TemplatePart(sentence: string, sourceIntent: SourceInten
 	return trainingPhrase;
 }
 
+/**
+ * CURRENTLY UNUSED. Dialogflow is not stable with 'isTemplate: true' style example sentences.
+ * INSTEAD, see getDialogflowV1UserSaysItem_NotTemplate() further below:
+ * @param sentence 
+ * @param sourceIntent 
+ */
 function getDialogflowV1UserSaysItem_IsTemplate(sentence: string, sourceIntent: SourceIntent): DialogflowUserSaysItem_V1 {
 
 	// We create a Dialogflow sentence in isTemplate=true mode, because:
