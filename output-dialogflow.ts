@@ -338,7 +338,7 @@ function getDialogflowV1UserSaysItem_IsTemplate(sentence: string, sourceIntent: 
 		}],
 		isTemplate: true,
 		count: 0,
-		updated: (new Date()).getTime()
+		updated: Math.trunc((new Date()).getTime() / 1000)
 	};
 
 	return userSaysItem;
@@ -383,7 +383,7 @@ function getDialogflowV1UserSaysItem_NotTemplate(sentence: string, sourceIntent:
 		data: <Array<any>>[],
 		isTemplate: false,
 		count: 0,
-		updated: (new Date()).getTime()
+		updated: Math.trunc((new Date()).getTime() / 1000)
 	};
 
 	// Slot specs could be either like:
@@ -404,15 +404,15 @@ function getDialogflowV1UserSaysItem_NotTemplate(sentence: string, sourceIntent:
 				userDefined: false
 			});
 		} else {
-			if (typeof exampleText === 'undefined') {
-				WARN(`WARNING: Example missing in slot spec in: '${sentence}'`);
-				WARN(`WARNING: Using slot name as example (questionable!)`);
+			const slot = sourceIntent.getSlot(slotName)
+			if (!exampleText && !slot.example) {
+				WARN(`WARNING: Example missing in slot spec in: '${sentence}', and not defined for SLOT:`);
+				WARN(`       :  Using slot name '${slotName}' as example (questionable!)`);
 			}
-			let slotType = sourceIntent.getSlot(slotName).type;
 			userSaysItem.data.push({
-				text: exampleText || slotName,
+				text: exampleText || slot.example || slotName,
 				alias: slotName,
-				meta: "@" + (slotType || slotName),
+				meta: "@" + (slot.type || slotName),
 				userDefined: false
 			});
 		}
@@ -445,7 +445,7 @@ function checkAgentRootFiles(outputFolder: string) {
 		missing = true;
 	}
 	path = `${outputFolder}/package.json`;
-	if (!fs.accessSync(path)) {
+	if (!fs.existsSync(path)) {
 		WARN(`WARNING: Dialogflow Agent folder appears non-complete. Missing: ${path}`);
 	}
 	if (missing) {

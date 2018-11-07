@@ -49,6 +49,8 @@ export function reverseProcessDFV1(dfFolder, fileToCreate) {
 	tryWrite(`LANG: ${DFAgent.language}`);
 	tryWrite(`WEBHOOK: ${DFAgent.webhook.url}`);
 
+	const entityExamples = {};
+
 	if (exists(`${dfFolder}/entities/.`))
 		fs.readdirSync(`${dfFolder}/entities`)
 			.forEach(writeEntity);
@@ -59,12 +61,15 @@ export function reverseProcessDFV1(dfFolder, fileToCreate) {
 
 			const entityValues = getJSON(`${dfFolder}/entities/${fileName}`);
 
-			// Print out line like "dog" or "dog = puppy/mutt":
+			// Print out line like "dog" or "dog ~ puppy|mutt":
 			for (let item of entityValues) {
 				let itemLine = item.value;
-				if (item.synonyms && item.synonyms.length > 0)
+				if (item.synonyms && item.synonyms.length > 0) {
 					itemLine += ' ~ ' + item.synonyms.join('|');
+				}
 				doWrite('  ' + itemLine);
+				// And capture the first entity value as the example for the entity:
+				if (!entityExamples[entityName]) entityExamples[entityName] = item.value;
 			}
 		}
 	}
@@ -72,6 +77,7 @@ export function reverseProcessDFV1(dfFolder, fileToCreate) {
 	if (exists(`${dfFolder}/intents/.`))
 		fs.readdirSync(`${dfFolder}/intents`)
 			.forEach(writeIntent);
+
 	function writeIntent(fileName) {
 		if (fileName.endsWith(`_usersays_${DFAgent.language}.json`)) {
 			const intentName = fileName.split('_usersays_')[0];
@@ -81,7 +87,7 @@ export function reverseProcessDFV1(dfFolder, fileToCreate) {
 			let slotSet = {};
 			let itemLines = [];
 
-			// Print out line like "i like <red=color:sys.color>":
+			// Print out line like "i like <color:red>":
 			for (let example of examples) {
 				let itemLine = '  ';
 				for (let snippet of example.data) {
@@ -111,11 +117,18 @@ export function reverseProcessDFV1(dfFolder, fileToCreate) {
 			doWrite(`\nINTENT: ${intentName}`);
 
 			for (let slotName of Object.keys(slotSet)) {
-				const meta = slotSet[slotName]
-				if (slotName === meta)
-					doWrite(`SLOT: ${slotName}`)
-				else
-					doWrite(`SLOT: ${slotName}:${meta}`)
+				const slotType = slotSet[slotName]
+				const example = entityExamples[slotType]
+				let line = `SLOT: ${slotName}`
+				if (slotName !== slotType) line += ` :${slotType}`
+				if (example) line += ` ~${example}`
+				doWrite(line)
+
+				if (!example) {
+					console.warn(`WARNING: No example text derivable for SLOT:${slotName} in INTENT:${intentName}`)
+					console.warn(`       :  You should add an example like so:`)
+					console.warn(`       : ${line} ~ example`)
+				}
 			}
 
 			for (let line of itemLines)

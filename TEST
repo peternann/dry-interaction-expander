@@ -1,0 +1,41 @@
+#!/bin/sh
+set -x
+
+#
+# Full cycle test script.
+# Use at your own risk. Understand what you are doing
+#
+
+# SET THESE:
+DFV1ZIP=DialogflowV1Agent-FuelScrooge-2018-09-23.zip
+TEST_NAME=DialogflowV1-FuelScrooge
+
+
+export DEBUG=*
+
+# First, unzip the original .zip downloaded from Dialogflow, twice:
+#rm -rf ./${TEST_NAME}.INPUT/
+#unzip $DFV1ZIP -d ${TEST_NAME}.INPUT
+rm -rf ./${TEST_NAME}.OUTPUT/
+unzip $DFV1ZIP -d ${TEST_NAME}.OUTPUT
+
+# Now, derive the yaml from the INPUT folder:
+rm -f ${TEST_NAME}.yaml
+./dry-vac --reverse -d ${TEST_NAME}.INPUT  ${TEST_NAME}.yaml
+
+# Now, modify the OUTPUT folder based on the yaml:
+./dry-vac           -d ${TEST_NAME}.OUTPUT ${TEST_NAME}.yaml
+
+diff -rb ${TEST_NAME}.INPUT ${TEST_NAME}.OUTPUT
+
+#diff ${TEST_NAME}.INPUT/intents/FuelAndLocation_usersays_en.json ${TEST_NAME}.OUTPUT/intents/FuelAndLocation_usersays_en.json
+
+#echo INPUT:
+#grep text ${TEST_NAME}.INPUT/intents/FuelAndLocation_usersays_en.json
+#echo OUTPUT:
+#grep text ${TEST_NAME}.OUTPUT/intents/FuelAndLocation_usersays_en.json
+
+# Zip up the output folder ready for uploading into Dialogflow:
+cd ${TEST_NAME}.OUTPUT
+rm -rf ${TEST_NAME}.OUTPUT.zip   # - Delete possible old zip before zipping
+zip -r ${TEST_NAME}.OUTPUT.zip .

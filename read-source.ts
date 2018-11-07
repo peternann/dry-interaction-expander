@@ -46,6 +46,7 @@ export function readSource(sourceFile: string, platform: string) {
 
 			// By having the 'normal sentence' RegEx near the top, I assume we save CPU by not
 			// having to do the othes, HOWEVER this may or may not be optimal...
+
 		} else if ((match = line.match(/^[^:=]+$/)) !== null
 			// But slots can have : and =, so more complex sentence RegEx to catch them:
 			// (Slots simply bounded by matching '<>' pairs)
@@ -57,23 +58,34 @@ export function readSource(sourceFile: string, platform: string) {
 			// "~" is used for synonym declarations with an entity:
 		} else if ((match = line.match(/^([a-z0-9 _'-]+)\s*~\s*(.*)$/i)) !== null) {
 			gotEntity(line);
+
 		} else if ((match = line.match(/^\$([a-z0-9_-]+)\s*=\s*(.*)$/i)) !== null) {
 			gotVarDecl(line, match);
+
 		} else if ((match = line.match(/^INVOCATION_NAME:\s*([a-z0-9_ -]+)$/i)) !== null) {
 			data.invocationName = match[1];
 			LOG("Got Invocation name:", data.invocationName);
+
 		} else if ((match = line.match(/^INTENT:\s*(.+)$/i)) !== null) {
 			gotIntentDecl(line, match);
-		} else if ((match = line.match(/^SLOT:\s*([a-z0-9_-]+)(:([a-z0-9_.-]+))?\s*$/i)) !== null) {
+
+		} else if ((match = line.match(/^SLOT:\s*([a-z0-9_-]+)(?:\s*:\s*([a-z0-9_.-]+))?(?:\s*~\s*([a-z0-9_.-]*[a-z0-9_.- ]*[a-z0-9_.-]))?\s*$/i)) !== null) {
+			// TODO: Slots should support a default 'example' string, since Dialogflow requires example text
+			// for every slot usage (in non-template mode, which we are forced to use due DF instability)
+			// Perhaps like:   SLOT: location : sys.location ~ New York
 			gotSlotDecl(line, match);
+
 		} else if ((match = line.match(/^ENTITY:\s*([a-z0-9_-]+)$/i)) !== null) {
 			gotEntityDecl(line, match);
+
 		} else if ((match = line.match(/^LANG(UAGE)?:\s*([a-z0-9._-]+)$/i)) !== null) {
 			data.lang = match[2];
 			LOG(`Got Language Decl: "${data.lang}"`);
+
 		} else if ((match = line.match(/^WEBHOOK:\s*(.+)$/i)) !== null) {
 			data.webhook = match[1];
 			LOG(`Got Webhook: "${data.webhook}"`);
+
 		} else {
 			// Only reason we get here (currently), is a colon in an unrecognised line:
 			ERROR(`ERROR: Malformed line: "${originalLine}", located at:\n${sourceFile}:${lineCount}`);
@@ -109,12 +121,13 @@ export function readSource(sourceFile: string, platform: string) {
 	function gotSlotDecl(line: string, match: string) {
 		// See RegEx used above:
 		let name = match[1],
-			// - Note that match[3] may be 'undefined', if the type was not stated:
+			// - Note that match[2] may be 'undefined', if the type was not stated:
 			// - This means the type was not explicit, which generally means: type === name.
-			type = match[3];
-		LOG(`Got Slot: "${name}:${type}"`);
+			type = match[2],
+			example = match[3];
+		LOG(`Got Slot: "${name} : ${type} ~ ${example}"`);
 		if (data.currentCollection instanceof SourceIntent) {
-			data.currentCollection.setSlot(name, type);
+			data.currentCollection.setSlot(name, type, example);
 		} else {
 			WARN(`Detected SLOT declaration not in INTENT definition. (Ignored)\nLine: ${line}`);
 		}

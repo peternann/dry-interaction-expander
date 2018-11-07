@@ -24,7 +24,8 @@ export class SentenceCollection {
 
 export interface SourceSlot {
 	name: string,
-	type: string
+	type: string,
+	example: string,
 }
 
 export class SourceIntent extends SentenceCollection {
@@ -35,9 +36,9 @@ export class SourceIntent extends SentenceCollection {
 		this.slots = [];
 	}
 
-	public setSlot(slotName: string, slotType: string) {
+	public setSlot(slotName: string, slotType: string, slotExample: string) {
 		if (!this.getSlot(slotName))
-			this.slots.push({ name: slotName, type: slotType });
+			this.slots.push({ name: slotName, type: slotType, example: slotExample });
 	}
 	public getSlot(slotName: string): SourceSlot {
 		return this.slots.find((testSlot) => { return testSlot.name == slotName });
