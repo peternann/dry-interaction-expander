@@ -12,6 +12,16 @@ const ERROR = console.error;
 /** 'global' object contains our source data: */
 declare var global: { dieData: DryUttExpanderData };
 
+/**
+ * SLOT RegEx. Supports variants like:
+ * (All whitespace breaks are optional)
+ * SLOT: mySlotAlias
+ * SLOT:mySlotAlias : slotType                 { slotType via: (?:\s*:\s*([a-z0-9_.-]+))? }
+ * SLOT:mySlotAlias:slotType ~ example text    { example text via: (?:\s*~\s*([a-z0-9_.-]*[a-z0-9_. -]*[a-z0-9_.-]))? }
+ * SLOT:mySlotAlias~example text    { example text via: (?:\s*~\s*([a-z0-9_.-]*[a-z0-9_. -]*[a-z0-9_.-]))? }
+ */
+const reSLOT = /^SLOT:\s*([a-z0-9_-]+)(?:\s*:\s*([a-z0-9_.-]+))?(?:\s*~\s*([a-z0-9_.-]*[a-z0-9_. -]*[a-z0-9_.-]))?\s*$/i;
+
 
 export function readSource(sourceFile: string, platform: string) {
 
@@ -69,7 +79,7 @@ export function readSource(sourceFile: string, platform: string) {
 		} else if ((match = line.match(/^INTENT:\s*(.+)$/i)) !== null) {
 			gotIntentDecl(line, match);
 
-		} else if ((match = line.match(/^SLOT:\s*([a-z0-9_-]+)(?:\s*:\s*([a-z0-9_.-]+))?(?:\s*~\s*([a-z0-9_.-]*[a-z0-9_.- ]*[a-z0-9_.-]))?\s*$/i)) !== null) {
+		} else if ((match = line.match(reSLOT)) !== null) {
 			// TODO: Slots should support a default 'example' string, since Dialogflow requires example text
 			// for every slot usage (in non-template mode, which we are forced to use due DF instability)
 			// Perhaps like:   SLOT: location : sys.location ~ New York
