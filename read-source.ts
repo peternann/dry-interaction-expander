@@ -54,15 +54,14 @@ export function readSource(sourceFile: string, platform: string) {
 		if (line.length == 0) {
 			LOG("Ignoring empty line...");
 
-			// By having the 'normal sentence' RegEx near the top, I assume we save CPU by not
+			// By having a relatively simple 'normal sentence' RegEx near the top, I assume we save CPU by not
 			// having to do the othes, HOWEVER this may or may not be optimal...
-
 		} else if ((match = line.match(/^[^:=]+$/)) !== null
 			// But slots can have : and =, so more complex sentence RegEx to catch them:
 			// (Slots simply bounded by matching '<>' pairs)
 			|| (match = line.match(/^([^:=<>]|(<[^>]+>))+$/))) {
-			// Anything without a colon or equals we take to be a sentence line:
-			// Probably we could be a lot smarter:
+			// So, pretty much anything without a colon or equals we take to be a sentence line:
+			// Probably we could be a smarter:
 			gotUtterance(line);
 
 			// "~" is used for synonym declarations with an entity:
