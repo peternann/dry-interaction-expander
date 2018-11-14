@@ -13,8 +13,8 @@ const WARN = console.warn;
 // The items named like "*Re" are just partial strings:
 const textRe = "[a-zA-Z0-9 '-]+";
 const identifierRe = "[a-zA-Z_][a-zA-Z0-9_-]*";
-/** Slot RegExp matches like "<MySlot>" or "<some example=MySlot>": */
-const slotRe = `<((${identifierRe})(:${textRe})?)>`;
+/** Slot RegExp matches like "<MySlot>" or "<MySlot~example text>": */
+const slotRe = `<((${identifierRe})(~${textRe})?)>`;
 /** Vanilla text is either simple text chars, OR a slot definition: */
 const vanillaTextRe = "([a-zA-Z0-9 '-]|(" + slotRe + "))+";
 /** Same as item above, but also allowing literal 'OR' pipe: '|' */

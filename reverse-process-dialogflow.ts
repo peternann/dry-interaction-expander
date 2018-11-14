@@ -97,8 +97,8 @@ export function reverseProcessDFV1(dfFolder, fileToCreate) {
 						// TODO: Should check that any slot appearing always has a consistent meta:
 						slotSet[snippet.alias] = snippet.meta.substr(1)
 						// Include the text and alias in the sentence output:
-						// Like: "colour is <color:light blue>"
-						itemLine += `<${snippet.alias}:${snippet.text}>`
+						// Like: "colour is <color~light blue>"
+						itemLine += `<${snippet.alias}~${snippet.text}>`
 					} else {
 						// Dialogflow lines may still have content like "find me some @fuelTypeEntity:fuelType":
 						// In this case, the 'type' is on the left, and the alias/handle on the right:
